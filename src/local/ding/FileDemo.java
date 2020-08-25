@@ -55,8 +55,8 @@ public class FileDemo {
 //        mmap();
 //        filelock();
 //        byteBufferTest();
-        deflaterdemo(new String[]{"demo.txt", "text.txt"});
-//        serializeDemo();
+//        deflaterdemo(new String[]{"demo.txt", "text.txt"});
+        serializeDemo();
     }
 
     public static void filelock() throws Exception {
@@ -363,18 +363,88 @@ public class FileDemo {
     }
 
     public static void serializeDemo() throws Exception {
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        ObjectOutputStream oos = new ObjectOutputStream(bos);
-        oos.writeObject("Demo");
-        oos.writeObject(new ArrayList<String>(Arrays.asList("zhangsan","wangwu")));
+//        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+//        ObjectOutputStream oos = new ObjectOutputStream(bos);
+//        oos.writeObject("Demo");
+//        oos.writeObject(new ArrayList<String>(Arrays.asList("zhangsan","wangwu")));
+//        oos.flush();
+//
+//        ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(bos.toByteArray()));
+//        String s = (String)ois.readObject();
+//        ArrayList<String> l = (ArrayList<String>) ois.readObject();
+//        System.out.println(s + "===" + l);
+//
+//        ObjectOutputStream ou = new ObjectOutputStream(new FileOutputStream("data.dat"));
+//        ou.writeObject(new Hello());
+//        ou.writeObject(new Hello());
+//        ObjectInputStream oo = new ObjectInputStream(new FileInputStream("data.dat"));
+//        Hello h = (Hello) oo.readObject();
+//        System.out.println(h);
+//
+//        h = (Hello) oo.readObject();
+//        System.out.println(h);
+//
+////        h = (Hello) oo.readObject();
+////        System.out.println(h);
+//
+//        Class<Hello> ha = Hello.class;
+////        System.out.println(int.class);
+////       ha.Constructor(Integer.class).newInstance(12);
+////        new Hello(1);
+//
+        ByteArrayOutputStream bou = new ByteArrayOutputStream();
+        ObjectOutputStream oos = new ObjectOutputStream(bou);
+        oos.writeObject(new HelloA(192, "WOow ssd"));
         oos.flush();
 
-        ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(bos.toByteArray()));
-        String s = (String)ois.readObject();
-        ArrayList<String> l = (ArrayList<String>) ois.readObject();
-        System.out.println(s + "===" + l);
+        ObjectInputStream ois =  new ObjectInputStream(new ByteArrayInputStream(bou.toByteArray()));
+        HelloA a = (HelloA) ois.readObject();
+        System.out.println(a);
 
+    }
 
+    static class HelloA implements Externalizable {
+        private int a;
+        private String name;
+
+        public HelloA (){}
+
+        public HelloA(int a, String name) {
+            this.a = a;
+            this.name = name;
+        }
+
+        @Override
+        public String toString() {
+            return name + a;
+        }
+
+        @Override
+        public void writeExternal(ObjectOutput out) throws IOException {
+//            out.writeInt(a);
+//            out.writeObject(name);
+        }
+
+        @Override
+        public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+//
+//            a = in.readInt();
+//            name = (String)in.readObject();
+        }
+    }
+
+    static class Hello implements Serializable{
+        public Hello() {}
+        private Hello(Integer a) {
+            System.out.println("++++" + a);
+        }
+        private Random random = new Random(System.nanoTime());
+        private final int r = random.nextInt(100);
+
+        @Override
+        public String toString() {
+            return Integer.toString(r);
+        }
     }
 }
 
