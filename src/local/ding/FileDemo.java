@@ -10,8 +10,12 @@ import java.nio.ByteOrder;
 import java.nio.CharBuffer;
 import java.nio.IntBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
 import java.nio.charset.Charset;
+import java.nio.file.attribute.FileTime;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
+import java.util.zip.*;
 
 public class FileDemo {
     public static String read(String filename) throws Exception {
@@ -48,7 +52,21 @@ public class FileDemo {
 //        byteBuffer();
 //        viewBuffers();
 //        useSymmetricScramble();
-        mmap();
+//        mmap();
+//        filelock();
+//        byteBufferTest();
+        deflaterdemo(new String[]{"demo.txt", "text.txt"});
+//        serializeDemo();
+    }
+
+    public static void filelock() throws Exception {
+        FileLock fileLock = new FileOutputStream("demo.txt").getChannel().lock();
+        System.out.println(fileLock.isShared());
+        if (fileLock != null) {
+            System.out.println("file is locking");
+            TimeUnit.MILLISECONDS.sleep(1000);
+            System.out.println("file is unlocking");
+        }
     }
 
     public static void readALine() throws Exception {
@@ -137,6 +155,8 @@ public class FileDemo {
     public static void byteBuffer() {
         int size = 1024;
         ByteBuffer bb = ByteBuffer.allocate(size);
+//        bb.limit(1);
+        bb.slice();
         byte b = bb.get();
         System.out.println(bb.position() + " " + bb.limit());
         bb.rewind();
@@ -283,6 +303,79 @@ public class FileDemo {
         }
         rfa.close();
     }
+
+    public static void byteBufferTest()
+    {
+        ByteBuffer bb = ByteBuffer.wrap("hasas".getBytes());
+        System.out.println(Arrays.toString(bb.array()));
+        bb.position(2);
+//        System.out.println(bb.capacity());
+        bb.limit(4);
+        ByteBuffer bb1 = bb.slice();
+        System.out.println(bb1.capacity() + ":" + bb1.position());
+        while (bb1.hasRemaining()) {
+            System.out.println((char) bb1.get());
+        }
+    }
+
+    public static void deflaterdemo (String[] files) throws Exception {
+        FileOutputStream f = new FileOutputStream("test.zip");
+        CheckedOutputStream csum = new CheckedOutputStream(f, new Adler32());
+        ZipOutputStream zos = new ZipOutputStream(csum);
+        zos.setComment("Demo java zip");
+        BufferedOutputStream out = new BufferedOutputStream(zos);
+        for (String file : files) {
+            System.out.println("writing file " + file);
+            BufferedReader br = new BufferedReader(new FileReader(file));
+            ZipEntry a = new ZipEntry(file);
+//            a.setComment("dasda");
+//            a.setMethod(6);
+            zos.putNextEntry(a);
+            int c;
+            while ((c = br.read()) != -1) {
+                out.write(c);
+            }
+            br.close();
+            out.flush();
+        }
+//        System.out.println(csum.getChecksum().getValue());
+        out.close();
+        System.out.println(csum.getChecksum().getValue());
+
+        System.out.println("read zip file");
+        FileInputStream fs = new FileInputStream("test.zip");
+        CheckedInputStream cis = new CheckedInputStream(fs, new Adler32());
+        ZipInputStream zis = new ZipInputStream(cis);
+        BufferedInputStream in = new BufferedInputStream(zis);
+        ZipEntry e;
+        while ((e = zis.getNextEntry()) != null) {
+
+            System.out.println("reading file " + e.getMethod() +  ":" + e.getComment() );
+            int x;
+            while ((x = in.read()) != -1) {
+//                System.out.write(x);
+            }
+        }
+
+
+        System.out.println("____" + cis.getChecksum().getValue());
+        in.close();
+    }
+
+    public static void serializeDemo() throws Exception {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        ObjectOutputStream oos = new ObjectOutputStream(bos);
+        oos.writeObject("Demo");
+        oos.writeObject(new ArrayList<String>(Arrays.asList("zhangsan","wangwu")));
+        oos.flush();
+
+        ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(bos.toByteArray()));
+        String s = (String)ois.readObject();
+        ArrayList<String> l = (ArrayList<String>) ois.readObject();
+        System.out.println(s + "===" + l);
+
+
+    }
 }
 
 class OsExecute {
@@ -309,3 +402,5 @@ class OsExecute {
         }
     }
 }
+
+
