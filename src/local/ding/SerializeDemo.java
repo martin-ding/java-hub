@@ -102,10 +102,10 @@ class FileSplitMerge {
     public static void mergeFile(String subfileName, String endfileName, int num) throws Exception {
         FileOutputStream fos = new FileOutputStream(endfileName);
         FileChannel ofc = fos.getChannel();
-        for (int i = 0; i< num ; i++) {
-            FileInputStream fio = new FileInputStream(subfileName + (i+1));
+        for (int i = 0; i < num; i++) {
+            FileInputStream fio = new FileInputStream(subfileName + (i + 1));
             FileChannel cfio = fio.getChannel();
-            long tnum = cfio.transferTo(0,cfio.size(), ofc);//直接使用transferTo，使用通道直接传输，快的很
+            long tnum = cfio.transferTo(0, cfio.size(), ofc);//直接使用transferTo，使用通道直接传输，快的很
 //            System.out.println(tnum + "::" + cfio.size());//可能不一定能读到cfio.size()个bytes的数据，具体查看这个方法的说明
             cfio.close();
         }
@@ -122,7 +122,7 @@ class FileSplitMerge {
         System.out.println("split 耗费时间： " + (endTime - startTime) + " ms");
 
         startTime = System.currentTimeMillis();
-        mergeFile("/Users/dingmac/Downloads/java_reader_uml.png","/Users/dingmac/Downloads/java_reader_uml_merge.png",  5);
+        mergeFile("/Users/dingmac/Downloads/java_reader_uml.png", "/Users/dingmac/Downloads/java_reader_uml_merge.png", 5);
         endTime = System.currentTimeMillis();
         System.out.println("merge 耗费时间： " + (endTime - startTime) + " ms");
 //        scanner.nextLine();
