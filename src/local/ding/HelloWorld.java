@@ -90,6 +90,12 @@ class CompType implements Comparable<CompType> {
 
 
 public class HelloWorld {
+    private HelloWorld(){}
+
+    protected void fun()
+    {
+        System.out.println("asdasdas");
+    }
     public static void main(String[] args) {
 //       CompType[] arr = Generated.array(CompType.class, CompType.getGenerator(),10);
 //        System.out.println(Arrays.toString(arr));

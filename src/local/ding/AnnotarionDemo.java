@@ -1,236 +1,104 @@
 package local.ding;
 
-import com.sun.xml.internal.xsom.impl.scd.Iterators;
+import com.sun.mirror.apt.AnnotationProcessor;
+import com.sun.mirror.apt.AnnotationProcessorEnvironment;
+import com.sun.mirror.declaration.MethodDeclaration;
+import com.sun.mirror.declaration.Modifier;
+import com.sun.mirror.declaration.ParameterDeclaration;
+import com.sun.mirror.declaration.TypeDeclaration;
+import com.sun.org.apache.xpath.internal.operations.Mod;
+import javafx.beans.InvalidationListener;
+import javafx.beans.Observable;
+import net.mindview.util.ProcessFiles;
 
-import java.lang.annotation.*;
-import java.lang.reflect.*;
-import java.util.*;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Observer;
 
-import static junit.framework.TestCase.assertTrue;
 
-@Target(ElementType.METHOD)
-@Retention(RetentionPolicy.RUNTIME)
-@interface Test{}
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.SOURCE)
+@interface ExtractInterface {
+    String value();
+}
+@ExtractInterface("IMultiplier")
+class Multiper {
+    public int multiple(int x, int y) {
+        int total = 0;
+        for (int i = 0; i < x; i++) {
+            total = add(total, y);
+        }
+        return total;
+    }
+
+    private int add(int a, int b) {return a + b;}
+
+    public static void main(String[] args) {
+        Multiper m = new Multiper();
+        System.out.println("16 * 12 = " + m.multiple(16, 12));
+    }
+}
 
 public class AnnotarionDemo {
-    class Testable {
-        void execute() {
-            System.out.println("Executing....");
-        }
-        @Test void testExecute() {execute();}
-
-    }
-
-    public void demo()
-    {}
-
-    @Upcase(id = 12, desc = "zhasn")
-    public void  demoUpcase()
-    {
-
-    }
-
-    @Upcase(id = 1211)
-    public void  demoUpcase1()
-    {
-
-    }
-
-}
-
-@Target(ElementType.METHOD)
-@Retention(RetentionPolicy.RUNTIME)
-@interface Upcase{
-    int id();
-    String desc() default "desc";
-}
-
-//class UpCaseTracker {
-//    public static void trackUseCases(List<Integer> useCases, Class<?> cl)
-//    {
-//        for (Method m:cl.getDeclaredMethods()) {
-//            Upcase uc = m.getAnnotation(Upcase.class);
-//            if (uc != null) {
-//                System.out.println("Found Use Case:" + uc.id() + " " + uc.desc());
-//                useCases.remove(new Integer(uc.id()));
-//            }
-//        }
-//        for (int i: useCases) {
-//            System.out.println("Warning :Missing use case-" + i);
-//        }
-//    }
-//
-//    public static void main(String[] args) {
-//        List<Integer> useCases = new ArrayList<>();
-//        Collections.addAll(useCases, 12, 1211, 1);
-//        trackUseCases(useCases, AnnotarionDemo.class);
-//        MethodDeclaration
-//    }
-//
-//
-//}
-
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.TYPE)
-@Inherited
-@interface IsInheritedAnnotation {
-}
-
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.TYPE)
-@interface NoInherritedAnnotation {
-}
-
-@NoInherritedAnnotation
-@IsInheritedAnnotation
-class InheritedBase {
-}
-
-class MyInheritedClass extends InheritedBase  {
-}
-
-//接口
-@NoInherritedAnnotation
-@IsInheritedAnnotation
-interface IInheritedInterface {
-}
-
-interface IInheritedInterfaceChild extends IInheritedInterface {
-}
-
-class MyInheritedClassUseInterface implements IInheritedInterface {}
-
-class MyInheritedClassTest {
-
-    @Test
-    public static void testInherited() {
-        {
-            Annotation[] annotations = MyInheritedClass.class.getAnnotations();
-            assertTrue("", Arrays.stream(annotations).anyMatch(l -> l.annotationType().equals(IsInheritedAnnotation.class)));
-            assertTrue("", Arrays.stream(annotations).noneMatch(l -> l.annotationType().equals(NoInherritedAnnotation.class)));
-        }
-        {
-            Annotation[] annotations = MyInheritedClassUseInterface.class.getAnnotations();
-            assertTrue("", Arrays.stream(annotations).noneMatch(l -> l.annotationType().equals(IsInheritedAnnotation.class)));
-            assertTrue("", Arrays.stream(annotations).noneMatch(l -> l.annotationType().equals(NoInherritedAnnotation.class)));
-        }
-        {
-            Annotation[] annotations = IInheritedInterface.class.getAnnotations();
-            assertTrue("", Arrays.stream(annotations).anyMatch(l -> l.annotationType().equals(IsInheritedAnnotation.class)));
-            assertTrue("", Arrays.stream(annotations).anyMatch(l -> l.annotationType().equals(NoInherritedAnnotation.class)));
-        }
-        {
-            Annotation[] annotations = IInheritedInterfaceChild.class.getAnnotations();
-            assertTrue("", Arrays.stream(annotations).noneMatch(l -> l.annotationType().equals(IsInheritedAnnotation.class)));
-            assertTrue("", Arrays.stream(annotations).noneMatch(l -> l.annotationType().equals(NoInherritedAnnotation.class)));
-        }
-    }
-
-    private int doaas() {
-        System.out.println("------");
-        return 1;
-    }
-    public void setName(String na) {
-        this.name = na;
-    }
-    public void getName()
-    {
-//        System.out.println(name);
-    }
-
-    private String name;
-
-    public <E> void  mmp(Map<String, Integer>[] map, List<E> list, Set<? extends MyInheritedClass> sets, String[] a) {
-        System.out.println("genetic parameter");
-    }
-
-    public Map<String, Integer> sample() {
-        System.out.println("genetic return");
-        return null;
-    }
-
     public static void main(String[] args) throws Exception {
-//        long start = System.currentTimeMillis();
-//        Class c = Class.forName("local.ding.MyInheritedClassTest");
-//        MyInheritedClassTest test = (MyInheritedClassTest)c.newInstance();
-//        Method m = c.getDeclaredMethod("setName", String.class);
-//        Method m1 = c.getDeclaredMethod("getName");
-//        for (int i = 0; i< 1000000; i++) {
-//            m.invoke(test, "hello world");
-//            m1.invoke(test);
-//        }
-//        long end = System.currentTimeMillis();
-//        System.out.println("reflect spend time" + (end - start));
-//
-//        start = System.currentTimeMillis();
-//        MyInheritedClassTest test1 = new MyInheritedClassTest();
-//        for (int i = 0; i< 1000000; i++) {
-//            test1.setName("hello world");
-//            test1.getName();
-//        }
-//        end = System.currentTimeMillis();
-//        System.out.println("normal spend time" + (end - start));
-        List<String[]> list = new ArrayList();
-        Class c  = Class.forName("local.ding.MyInheritedClassTest");
-        Method m = c.getDeclaredMethod("mmp", Map[].class, List.class, Set.class, String[].class);
-        for (Type t :m.getGenericParameterTypes()) {
-//            if (t instanceof Class) {//原始类型输出 class java.lang.String
-            if (t instanceof GenericArrayType) {
-                System.out.println("######" + t);
-                 t.getTypeName();
+        Class<HelloWorld> helloWorldClass = HelloWorld.class;
+        Constructor c = helloWorldClass.getDeclaredConstructor();
+        c.setAccessible(true);
+        ((HelloWorld)c.newInstance()).fun();
+    }
+}
+class InterfaceExtractProcessor implements AnnotationProcessor {
+    private final AnnotationProcessorEnvironment env;
 
-                continue;
-//                Type[] as = ((ParameterizedType) t). getActualTypeArguments();
-////                System.out.println(Arrays.toString(as));
-//                for (Type a : as) {
-//                    if (a instanceof Class) {
-//                        System.out.println(a);
-//                    }
-//                }
-////                    if (a instanceof WildcardType){
-////                        Type[] maa = ((WildcardType) a).getUpperBounds();
-////                        System.out.println(Arrays.toString(maa));
-////
-////                        Type[] man = ((WildcardType) a).getLowerBounds();
-////                        System.out.println(Arrays.toString(man));
-////                    }
-////                }
-//                for (Type a: as) {
-//                    if (a instanceof GenericArrayType) {
-//                        System.out.println(Arrays.toString(((TypeVariable)a).getBounds()));
-//                    }
+    private ArrayList<MethodDeclaration> interfaceMethods = new ArrayList();
+
+    public InterfaceExtractProcessor(AnnotationProcessorEnvironment env) {
+        this.env = env;
+    }
+
+    @Override
+    public void process() {
+        for (TypeDeclaration typeDecl: env.getSpecifiedTypeDeclarations()) {
+            ExtractInterface annot = typeDecl.getAnnotation(ExtractInterface.class);
+            if (annot == null) {
+                break;
+            }
+            for (MethodDeclaration m : typeDecl.getMethods()) {
+                if (m.getModifiers().contains(Modifier.PUBLIC) && !(m.getModifiers().contains(Modifier.STATIC)))
+                    interfaceMethods.add(m);
+            }
+            if (interfaceMethods.size() > 0) {
+                try {
+                    PrintWriter writer = env.getFiler().createSourceFile(annot.value());
+                    writer.println("package " + typeDecl.getPackage().getQualifiedName() + ";");
+                    writer.println("public interface "+ annot.value() + " {");
+                    for (MethodDeclaration m: interfaceMethods) {
+                        writer.print("  public ");
+                        writer.print(m.getReturnType() + " ");
+                        writer.print(m.getSimpleName() + " (");
+                        int i = 0;
+                        for (ParameterDeclaration parm: m.getParameters()) {
+                            writer.print(parm.getType() + " " + parm.getSimpleName());
+                            if (++i < m.getParameters().size()) {
+                                writer.print(", ");
+                            }
+                        }
+                        writer.println(");");
+                    }
+                    writer.println("}");
+                    writer.close();
+                } catch (IOException ioe) {
+                    throw new RuntimeException(ioe);
                 }
             }
-//
-////            if (t instanceof GenericArrayType) {
-////                Type ma = ((GenericArrayType) t).getGenericComponentType();
-////                System.out.println(ma);
-////            }
-//
-//
         }
-
-//        class Mapp<K extends String, V extends MyInheritedClass & I> extends AbstractMap<K,V> {
-//
-//            @Override
-//            public Set<Entry<K, V>> entrySet() {
-//                return null;
-//            }
-//        }
-
-//    }
-}
-
-class AB {
-    private int age;
-    private String name;
-
-    public AB(int age, String name) {
-        this.age = age;
-        this.name = name;
     }
 }
-
-
-
 
