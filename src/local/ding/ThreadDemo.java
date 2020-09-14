@@ -1,5 +1,7 @@
 package local.ding;
 
+import net.mindview.util.CountingIntegerList;
+
 import java.io.IOException;
 import java.nio.channels.Channel;
 import java.nio.channels.Channels;
@@ -130,10 +132,25 @@ class TestDemoA {
 //    }
 
     public static void main(String[] args) throws InterruptedException {
-        //测试lambda的使用 拉姆达
-        String str="haha";
-        Thread.sleep(1000);
-        (new Thread(() -> {System.out.println(str);})).start();
+        ExecutorService exec = Executors.newCachedThreadPool();
+        exec.execute(new Runnable() {
+            @Override
+            public void run() {
+                Thread t = Thread.currentThread();
+                System.out.println(t.getName());
+                System.out.println(t.getPriority());
+                System.out.println(Thread.currentThread().getThreadGroup().getName());
+                System.out.println(Thread.currentThread());
+//                Thread.currentThread().toString();
+            }
+        });
+        exec.shutdown();
+        System.out.println(Thread.currentThread());
+
+//        //测试lambda的使用 拉姆达
+//        String str="haha";
+//        Thread.sleep(1000);
+//        (new Thread(() -> {System.out.println(str);})).start();
 
 //       new TestDemoA().method2();
 //        List<Integer> list = new ArrayList<>();
@@ -321,3 +338,228 @@ class ThreadStateTest {
 //        }
     }
 }
+
+class DelayTask implements Runnable , Delayed {
+    private static int counter = 0;
+    private final int id = counter++;
+    private final int delta;//延迟的时间
+    private final long trigger;//什么时候触发
+    protected static List<DelayTask> sequence = new ArrayList<>();
+
+    public DelayTask(int delayInMilliseconds)
+    {
+        delta = delayInMilliseconds;
+        trigger = System.nanoTime() + TimeUnit.NANOSECONDS.convert(delayInMilliseconds, TimeUnit.MILLISECONDS);
+        sequence.add(this);
+    }
+
+    @Override
+    public int compareTo(Delayed o) {
+        DelayTask that = (DelayTask) o;
+        if (trigger > that.trigger) { return 1;}
+        if (trigger < that.trigger) { return -1;}
+        return 0;
+    }
+
+    @Override
+    public void run() {
+        System.out.println(this + " ");
+    }
+
+    @Override
+    public String toString() {
+        return String.format("[%1$-4d]", delta) + " Task " + id;
+    }
+
+    public String summary()
+    {
+        return "(" + id + ":" + delta + ")";
+    }
+
+    @Override
+    public long getDelay(TimeUnit unit) {
+        return unit.convert(trigger - System.nanoTime(), TimeUnit.NANOSECONDS);
+    }
+
+    public static class EndSentiel extends DelayTask {
+        private ExecutorService exec;
+
+        public EndSentiel(int delayInMilliseconds, ExecutorService e) {
+            super(delayInMilliseconds);
+            exec = e;
+        }
+
+        @Override
+        public void run() {
+            for (DelayTask pt: sequence) {
+                System.out.println(pt.summary() + " ");
+            }
+            System.out.println();
+            System.out.println(this + " Calling shutdownNow()");
+            exec.shutdownNow();
+        }
+    }
+}
+
+class DelayedTaskConsumer implements Runnable {
+    private DelayQueue<DelayTask> q;
+
+    DelayedTaskConsumer(DelayQueue<DelayTask> q) {
+        this.q = q;
+    }
+
+    @Override
+    public void run() {
+        try{
+            while (!Thread.interrupted()) {
+                q.poll().run();
+            }
+        } catch (Exception e) {
+            System.out.println("-----");
+        }
+        System.out.println("Finished DelayedTaskConsumer");
+    }
+
+}
+
+class DelayQueueDemo{
+    ExecutorService exec = Executors.newCachedThreadPool();
+    public static void main(String[] args) {
+//        Random random = new Random(47);
+
+//        DelayQueue<DelayTask> queue = new DelayQueue<>();
+//        for (int i = 0; i < 20; i++) {
+//            queue.put(new DelayTask(random.nextInt(5000)));
+//        }
+//        queue.add(new DelayTask.EndSentiel(5000, executorService));
+//        executorService.execute(new DelayedTaskConsumer(queue));
+//        executorService.shutdown();
+
+//        new ScheduledThreadPoolExecutor()
+//        Calendar lastTime = Calendar.getInstance();
+//        System.out.println(lastTime.getTime());
+//        lastTime.set(Calendar.MINUTE, 30);
+//        System.out.println(lastTime.getTime());
+//        new Exchanger().exchange();
+//        CopyOnWriteArrayList
+
+//        try {
+//            return;
+//        }finally {
+//            System.out.println("===");
+//        }
+
+//        PriorityQueue p = new PriorityQueue();
+//        AtomicInteger ai = new AtomicInteger(10);
+//        ai.incrementAndGet();
+//        System.out.println(ai);
+        Random rand = new Random(47);
+
+
+    }
+
+    public Future<Integer> calculate(final int x, final int b) {
+        return exec.submit(new Callable<Integer>() {
+            @Override
+            public Integer call() throws Exception {
+                return x + b;
+            }
+        });
+    }
+}
+
+class Exercise42{
+    private static int carCount=0;
+    private static int robotCount=0;
+    private static List<ActiveCarRobot> robots=new ArrayList<ActiveCarRobot>();
+
+    public class Car{
+        private final int id=++carCount;
+        private boolean waxOn=false;
+        public void waxOn(){
+            if(waxOn){System.out.println("Error, the wax already on!");return;}
+            waxOn=true;
+        }
+        public void waxOff(){
+            if(!waxOn){System.out.println("Error, should waxOn before waxOff!");return;}
+            waxOn=false;
+        }
+        public String toString(){return "Car#"+id;}
+    }
+
+    public class ActiveCarRobot implements Runnable{
+        private final int id=++robotCount;
+        private final ExecutorService exec=Executors.newSingleThreadExecutor();	//必须是单线程执行器
+        private List<Future<String>> results=new CopyOnWriteArrayList<Future<String>>();
+        private Car car;
+        public ActiveCarRobot(Car c){car=c;robots.add(this);}
+        public String toString(){return "Robot#"+id;}
+
+        public void run(){
+            for(int i=0;i<10;i++){
+                results.add(waxOn());
+                sleep(10);
+                results.add(waxOff());
+            }
+            showResults();
+            shutdown();
+        }
+        public Future<String> waxOn(){
+            return exec.submit(new Callable<String>(){	//把waxOn的动作封装成一个Callable对象，被提交给消息队列
+                public String call(){
+//                    sleep(10);
+                    car.waxOn();
+                    return "    "+car+" wax on by "+ActiveCarRobot.this;
+                }
+            });
+        }
+        public Future<String> waxOff(){
+            return exec.submit(new Callable<String>(){	//把waxOff的动作封装成一个Callable对象，被提交给消息队列
+                public String call(){
+//                    sleep(10);
+                    car.waxOff();
+                    return "    "+car+" wax off by "+ActiveCarRobot.this;
+                }
+            });
+        }
+        public void sleep(int time){
+            try{
+                TimeUnit.MILLISECONDS.sleep(time);
+            }catch(InterruptedException ie){
+                System.out.println(this+" interrupted!");
+            }
+        }
+        public void shutdown(){exec.shutdownNow();}
+        public void showResults(){
+            long endAt=System.currentTimeMillis()+5000;
+            while(true){
+                for(Future<String> f:results){
+                    if(f.isDone()){
+                        try{
+                            System.out.println(f.get());
+                        }catch(Exception e){
+                            System.out.println("Error when reading the results!");
+                        }
+                    }
+                    results.remove(f);
+                }
+                if(System.currentTimeMillis()>=endAt){break;}
+            }
+        }
+    }
+
+    public static void main(String[] args){
+        Exercise42 test=new Exercise42();
+        ExecutorService exec=Executors.newCachedThreadPool();
+        for(int i=0;i<10;i++){
+            exec.execute(test.new ActiveCarRobot(test.new Car()));
+        }
+        try{
+            TimeUnit.SECONDS.sleep(5);
+        }catch(InterruptedException ie){
+            System.out.println("Test interrupted!");
+        }
+        exec.shutdownNow();
+    }
+}
+
