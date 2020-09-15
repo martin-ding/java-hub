@@ -6,9 +6,6 @@ import com.sun.mirror.declaration.MethodDeclaration;
 import com.sun.mirror.declaration.Modifier;
 import com.sun.mirror.declaration.ParameterDeclaration;
 import com.sun.mirror.declaration.TypeDeclaration;
-import com.sun.org.apache.xpath.internal.operations.Mod;
-import javafx.beans.InvalidationListener;
-import javafx.beans.Observable;
 import net.mindview.util.ProcessFiles;
 
 import java.io.IOException;

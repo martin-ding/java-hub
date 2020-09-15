@@ -3,7 +3,6 @@ package local.ding;
 import local.ding.tools.DirTool;
 import local.ding.tools.TextFile;
 
-import javax.xml.soap.Text;
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
